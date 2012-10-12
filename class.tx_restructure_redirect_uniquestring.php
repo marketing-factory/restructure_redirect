@@ -2,7 +2,7 @@
 class tx_restructure_redirect_uniquestring {
 	function evaluateFieldValue($value, $is_in, &$set) {
 		$set=true;
-		debug1(array('unique',$value,$is_in,$set));
+
 		//hole PID aus Post Variable (nicht sehr schön, aber scheinbar der einzige Weg?!)
 		$mypid = t3lib_div::_GP('popViewId');
 		$datas = ($_POST['data']['tx_restructure_redirect']);
@@ -15,7 +15,7 @@ class tx_restructure_redirect_uniquestring {
 		}
 
 
-	//	debug1(count($result));
+
 
 		//existiert schon ein Eintrag, dann den neuen NICHT speichern und Fehlermeldung werfen
 		if (count($result)>0 ) {

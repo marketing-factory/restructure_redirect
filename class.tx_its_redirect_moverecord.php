@@ -43,7 +43,12 @@ class tx_its_tcemain {
 		if ($command == 'move') {
 			if ($table == 'pages') {
 				$its_link = t3lib_div::makeInstance('tx_its_linkcreator',$id);
-				$target = $this->getPidFromPageID($value);
+				if ($value < 0 ) {
+					$target = $this->getPidFromPageID($value*-1);
+					debug1(array('getPidFromPageID',$target));
+				} else {
+					$target= $value;
+				}
 				$source = $this->getPidFromPageID($id);
 				debug1('-----------');
 				debug1($source);
