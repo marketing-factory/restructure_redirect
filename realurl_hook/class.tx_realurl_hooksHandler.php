@@ -1,6 +1,16 @@
 <?php
-require_once(t3lib_extMgm::extPath('restructure_redirect').'class.tx_its_linkcreator.php');
+require_once(t3lib_extMgm::extPath('restructure_redirect').'class.tx_restructure_linkcreator.php');
 class tx_realurl_hooksHandler  {
+
+	/**
+	 *
+	 * user_decodeSpURL_preProc
+	 * hook for realurl to redirect if neccessary
+	 *
+	 * @param array $hookParams
+	 * @param object $pObj
+	 *
+	 */
 	function user_decodeSpURL_preProc ( $hookParams, $pObj ) {
 		$table = "tx_restructureredirect_redirects";
 		//$enableFields = $GLOBALS['TSFE']->sys_page->enableFields($table);
@@ -17,12 +27,9 @@ class tx_realurl_hooksHandler  {
 			OR FIND_IN_SET('-1',tx_restructureredirect_redirects.fe_group
 		))";
 
-
-		//$pObj->decodeSpURL
 		$where = "url='" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'])."'";
 		$where .= ' AND (expire=0 OR  expire>'.time().') ';
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table,$where . $enableFields, '','',1);
-		$query = $GLOBALS['TYPO3_DB']->SELECTQuery('*', $table,$where . $enableFields, '','',1);
 
 		if ($res) {
 			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
@@ -31,7 +38,6 @@ class tx_realurl_hooksHandler  {
 				$params = $this->getUrlParams($hookParams[URL]);
 
 				unset ($params['id']);
-				//$redirectUrl = $this->GetUrl($redirectId , $params);
 				$its_link = t3lib_div::makeInstance('tx_its_linkcreator',$redirectId);
 				$redirectUrl = $its_link->getLink($redirectId,$params);
 				if ($redirectUrl == $hookParams[URL]  ) {
@@ -44,6 +50,14 @@ class tx_realurl_hooksHandler  {
 			}
 		}
 	}
+
+	/**
+	 * getUrlParams
+	 * getparams from realurl
+	 * @param string $url
+	 * @return array
+	 *
+	 */
 
 	private function getUrlParams ($url) {
 		$table = 'tx_realurl_urlencodecache';
