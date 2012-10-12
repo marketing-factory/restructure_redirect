@@ -10,7 +10,7 @@ class tx_its_tcemain {
 			 * $proparray['pid'] source pid
 			 * $resolvedPid destination pid
 			 */
-			//debug1($uid);
+
 
 			/**
 			 * get all sub pages
@@ -26,34 +26,33 @@ class tx_its_tcemain {
 			//$paramArr = array();
 			$paramArr = $this->getLangParams();
 			$paramArr [0] = array();
-			foreach ($paramArr as $params ) {
-				foreach ( $subpages as $subpage ) {
-					debug1($its_link->getLink($subpage[uid],$params));
-				}
-			}
+
 		}
 
 	}
+	/**
+	 * processCmdmap_preProcess using the processCmdmap_preProcess hook
+	 * on moving a page in the pagetree redirects will be added automatically
+	 * @param string $command
+	 * @param string $table
+	 * @param string $id
+	 * @param string $value
+	 * @param object $obj
+	 * @return void
+	 */
 
 	public function processCmdmap_preProcess ($command, $table, $id, $value, $obj) {
-		debug1(array('command',$command));
-		debug1(array('$table',$table));
-		debug1(array('$id',$id));
-		debug1(array('$value',$value));
+
 		if ($command == 'move') {
 			if ($table == 'pages') {
 				$its_link = t3lib_div::makeInstance('tx_its_linkcreator',$id);
 				if ($value < 0 ) {
 					$target = $this->getPidFromPageID($value*-1);
-					debug1(array('getPidFromPageID',$target));
 				} else {
 					$target= $value;
 				}
 				$source = $this->getPidFromPageID($id);
-				debug1('-----------');
-				debug1($source);
-				debug1($target);
-				debug1('-----------');
+
 				if ($source == $target) {
 					return;
 				}
@@ -71,8 +70,14 @@ class tx_its_tcemain {
 
 			}
 		}
-		//debug1(array('$obj',$obj));
+
 	}
+
+	/**
+	 * getLangParams
+	 * getting the url parameters for differents languagges of the page
+	 * return array
+	 */
 
 	private function getLangParams () {
 		$table = "sys_language";
@@ -86,6 +91,13 @@ class tx_its_tcemain {
 		return $paramArr;
 	}
 
+	/**
+	 * getSubpages
+	 * @param string $uif
+	 * @param array $subpages
+	 * @return array
+	 */
+
 	private function getSubpages ($uid, $subpages = array()) {
 		$table = "pages";
 		$enableFields =   t3lib_BEfunc::BEenableFields($table);
@@ -98,6 +110,11 @@ class tx_its_tcemain {
 		return $subpages;
 	}
 
+	/**
+	 * getPidFromPageID
+	 * @param string $uid
+	 * @return integer
+	 */
 
 	private function getPidFromPageID ($uid) {
 		$table = "pages";

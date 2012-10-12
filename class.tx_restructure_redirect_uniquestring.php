@@ -1,5 +1,9 @@
 <?php
 class tx_restructure_redirect_uniquestring {
+	/**
+	 * evaluateFieldValue tca eval function for cheking on unique entries
+	 *
+	 */
 	function evaluateFieldValue($value, $is_in, &$set) {
 		$set=true;
 
