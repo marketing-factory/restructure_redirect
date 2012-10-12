@@ -20,6 +20,7 @@ class tx_realurl_hooksHandler  {
 
 		//$pObj->decodeSpURL
 		$where = "url='" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'])."'";
+		$where .= ' AND (expire=0 OR  expire<'.time().') ';
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table,$where . $enableFields, '','',1);
 
 		if ($res) {
@@ -32,10 +33,7 @@ class tx_realurl_hooksHandler  {
 				//$redirectUrl = $this->GetUrl($redirectId , $params);
 				$its_link = t3lib_div::makeInstance('tx_its_linkcreator',$redirectId);
 				$redirectUrl = $its_link->getLink($redirectId,$params);
-
-
 				if ($redirectUrl == $hookParams[URL]  ) {
-
 					return;
 				}
 				header('HTTP/1.1 301 Moved Permanently');
