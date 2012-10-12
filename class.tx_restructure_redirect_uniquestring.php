@@ -9,9 +9,7 @@ class tx_restructure_redirect_uniquestring {
 
 		//hole PID aus Post Variable (nicht sehr schön, aber scheinbar der einzige Weg?!)
 		$mypid = t3lib_div::_GP('popViewId');
-		debug($mypid);
 		$datas = ($_POST['data']['tx_restructureredirect_redirects']);
-		debug($_POST['data']);
 		$keys = array_keys($datas);
 		$myUid = intval($keys[0]);
 		if ($myUid > 0) {
