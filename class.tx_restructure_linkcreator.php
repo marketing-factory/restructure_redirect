@@ -21,7 +21,7 @@ class tx_restructure_linkcreator {
 		$rootline = t3lib_BEfunc::BEgetRootLine($uid);
 		$rootpid = 1;
 		foreach ($rootline as $line ) {
-			if ($line[pid] > 0) {
+			if ($line[uid] > 0) {
 				$rootpid = $line[uid];
 			}
 			if ($line[is_siteroot] == 1 ) {
@@ -44,6 +44,7 @@ class tx_restructure_linkcreator {
 		$this->localTSFE->forceTemplateParsing = 1;
 		$this->localTSFE->getConfigArray();
 		$GLOBALS['TSFE'] = $this->localTSFE;
+		$GLOBALS['TSFE']->includeTCA();
 	}
 
 	/**

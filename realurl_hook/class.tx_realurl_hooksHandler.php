@@ -38,7 +38,7 @@ class tx_realurl_hooksHandler  {
 				$params = $this->getUrlParams($hookParams[URL]);
 
 				unset ($params['id']);
-				$its_link = t3lib_div::makeInstance('tx_its_linkcreator',$redirectId);
+				$its_link = t3lib_div::makeInstance('tx_restructure_linkcreator',$redirectId);
 				$redirectUrl = $its_link->getLink($redirectId,$params);
 				if ($redirectUrl == $hookParams[URL]  ) {
 					return;
