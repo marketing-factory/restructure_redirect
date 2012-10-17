@@ -25,10 +25,7 @@ $TCA['tx_restructureredirect_redirects'] = array(
 	),
 );
 
-
-if (TYPO3_MODE === 'BE') {
-	t3lib_extMgm::addModulePath('web_txrestructureredirectM1', t3lib_extMgm::extPath($_EXTKEY) . 'mod1/');
-
-	t3lib_extMgm::addModule('tools', 'txrestructureredirectM1', '', t3lib_extMgm::extPath($_EXTKEY) . 'mod1/');
+if (TYPO3_MODE=='BE')   {
+	t3lib_extMgm::addModule('tools','redirect','',t3lib_extMgm::extPath($_EXTKEY).'mod/');
 }
 ?>

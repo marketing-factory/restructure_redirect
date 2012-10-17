@@ -30,20 +30,17 @@
  * @author	Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 
-$GLOBALS['LANG']->includeLLFile('EXT:restructure_redirect/mod1/locallang.xml');
+$GLOBALS['LANG']->includeLLFile('EXT:restructure_redirect/mod/locallang.xml');
 
-$BE_USER->modAccess($MCONF,1);
-
+$GLOBALS['BE_USER']->modAccess($MCONF,1);	// This checks permissions and exits if the users has no permission for entry.
 
 
 /**
  * Main script class
  *
- * @author	Kasper Skårhøj <kasperYYYY@typo3.com>
  * @package TYPO3
- * @subpackage tx_beuser
  */
-class SC_mod_tools_be_user_index {
+class SC_mod_tools_redirect {
 	var $MCONF=array();
 	var $MOD_MENU=array();
 	var $MOD_SETTINGS=array();
@@ -69,17 +66,12 @@ class SC_mod_tools_be_user_index {
 
 		$this->menuConfig();
 
-
-
 		// **************************
 		// Initializing
 		// **************************
 		$this->doc = t3lib_div::makeInstance('template');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->setModuleTemplate('templates/beuser.html');
-		$filename = '../'.t3lib_extMgm::extRelPath('restructure_redirect') . 'mod1/redirects.html';
-
-		$this->doc->setModuleTemplate($filename);
+		$this->doc->setModuleTemplate('EXT:restructure_redirect/mod/redirects.html');
 
 		$this->doc->form = '<form action="" method="post">';
 
@@ -117,10 +109,6 @@ class SC_mod_tools_be_user_index {
 	 * @return	void
 	 */
 	function main()	{
-		$this->content='';
-
-
-		$this->content.=$this->doc->spacer(5);
 
 		switch($this->MOD_SETTINGS['function'])	{
 			case 'listRedirects':
@@ -137,7 +125,7 @@ class SC_mod_tools_be_user_index {
 		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
 			// Renders the module page
 		$this->content = $this->doc->render(
-			'List Redirects',
+			'Backend User Administration',
 			$this->content
 		);
 	}
@@ -159,16 +147,13 @@ class SC_mod_tools_be_user_index {
 	protected function getButtons()	{
 
 		$buttons = array(
+			'add' => '',
 			'csh' => '',
 			'shortcut' => '',
 			'save' => ''
 		);
 			// CSH
 		//$buttons['csh'] = t3lib_BEfunc::cshItem('_MOD_web_func', '', $GLOBALS['BACK_PATH']);
-
-			// Shortcut
-
-
 		return $buttons;
 	}
 
@@ -176,7 +161,11 @@ class SC_mod_tools_be_user_index {
 
 
 
-
+	/***************************
+	 *
+	 * OTHER FUNCTIONS:
+	 *
+	 ***************************/
 
 
 
@@ -222,8 +211,6 @@ class SC_mod_tools_be_user_index {
 		return implode('',$cells);
 	}
 
-
-
 	/**
 	 * Returns the local path for this string (removes the PATH_site if it is included)
 	 *
@@ -238,12 +225,16 @@ class SC_mod_tools_be_user_index {
 		}
 	}
 
+	/***************************
+	 *
+	 * "List Redirects" FUNCTIONS:
+	 *
+	 ***************************/
 
-
-
-
-
-	function listRedirects()	{
+	/**
+	 * @author
+	 */
+function listRedirects()	{
 		$select_fields = '*';
 		$from_table = 'tx_restructureredirect_redirects';
 		$where_clause = 'deleted=0';
@@ -291,16 +282,17 @@ class SC_mod_tools_be_user_index {
 		return $content;
 	}
 
+
 }
 
 
-if (defined('TYPO3_MODE') && isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/beuser/mod/index.php'])) {
-	include_once($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/beuser/mod/index.php']);
+if (defined('TYPO3_MODE') && isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/restructure_redirect/mod/index.php'])) {
+	include_once($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/restructure_redirect/mod/index.php']);
 }
 
 
 // Make instance:
-$SOBE = t3lib_div::makeInstance('SC_mod_tools_be_user_index');
+$SOBE = t3lib_div::makeInstance('SC_mod_tools_redirect');
 $SOBE->init();
 $SOBE->main();
 $SOBE->printContent();
