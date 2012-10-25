@@ -30,8 +30,11 @@
  * @author	Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 
-$GLOBALS['LANG']->includeLLFile('EXT:restructure_redirect/mod/locallang.xml');
-
+if (class_exists(t3lib_utility_VersionNumber) && t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version) >= 4006000) {
+	$GLOBALS['LANG']->includeLLFile('EXT:restructure_redirect/mod/locallang.xlf');
+} else {
+	$GLOBALS['LANG']->includeLLFile('EXT:restructure_redirect/mod/locallang.xml');
+}
 $GLOBALS['BE_USER']->modAccess($MCONF,1);	// This checks permissions and exits if the users has no permission for entry.
 
 
