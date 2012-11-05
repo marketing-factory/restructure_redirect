@@ -36,11 +36,10 @@ class tx_realurl_hooksHandler  {
 			if ($row['url'] && strlen($row['url'])> 0) {
 				$redirectId = $row['pid'];
 				$params = $this->getUrlParams($hookParams[URL]);
-
+				$domain = t3lib_befunc::getViewDomain($redirectId).'/';
 				unset ($params['id']);
 				$its_link = t3lib_div::makeInstance('tx_restructure_linkcreator',$redirectId);
 				$redirectUrl = $its_link->getLink($redirectId,$params);
-				$domain = $this->getDomain();
 				if ($redirectUrl == $hookParams[URL]  ) {
 					return;
 				}
@@ -72,38 +71,6 @@ class tx_realurl_hooksHandler  {
 		}
 		return array();
 	}
-
-	/**
-	 * getDomain from sys_domain table
-	 * @return $domain
-	 */
-	function getDomain () {
-		$table = 'sys_domain';
-		$enableFields = " AND hidden=0";
-		$where = "1=1";
-		$domain = '';
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table,$where . $enableFields, '','sorting',1);
-		$query = $GLOBALS['TYPO3_DB']->SELECTQuery('*', $table,$where . $enableFields, '','sorting',1);
-		if ($res) {
-			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-				$domain = $row['domainName'];
-				if (substr($domain, 1,-1) != '/') {
-					$domain .= '/';
-					if (substr($domain, 1,4) != 'http') {
-						if ( substr(t3lib_div::getIndpEnv('TYPO3_SITE_URL'),0,5) == 'https') {
-							$domain = 'https://'.$domain;
-						} else {
-							$domain = 'http://'.$domain;
-						}
-					}
-
-				}
-			}
-		}
-		return $domain;
-	}
-
-
 
 }
 ?>
