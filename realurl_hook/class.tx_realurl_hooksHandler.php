@@ -26,7 +26,8 @@ class tx_realurl_hooksHandler  {
 			OR FIND_IN_SET('-1',tx_restructureredirect_redirects.fe_group
 		))";
 
-		$where = "url='" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'],$table)."'";
+		$where = "(url='" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'],$table)."'";
+		$where .= "OR url='/" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'],$table)."')";
 		$where .= ' AND (expire=0 OR  expire>'.time().') ';
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table,$where . $enableFields, '','',1);
 
