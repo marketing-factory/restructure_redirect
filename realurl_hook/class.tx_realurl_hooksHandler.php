@@ -13,7 +13,6 @@ class tx_realurl_hooksHandler  {
 	 */
 	function user_decodeSpURL_preProc ( $hookParams, $pObj ) {
 		$table = "tx_restructureredirect_redirects";
-		//$enableFields = $GLOBALS['TSFE']->sys_page->enableFields($table);
 		$enableFields = "
 		AND tx_restructureredirect_redirects.deleted=0
 		AND tx_restructureredirect_redirects.hidden=0
@@ -40,14 +39,12 @@ class tx_realurl_hooksHandler  {
 				unset ($params['id']);
 				$its_link = t3lib_div::makeInstance('tx_restructure_linkcreator',$redirectId);
 				$redirectUrl = $its_link->getLink($redirectId,$params);
+				$domain = $this->getDomain();
 				if ($redirectUrl == $hookParams[URL]  ) {
 					return;
 				}
-
-				header('HTTP/1.1 301 Moved Permanently');
-				//header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
-				header('Location: ' . 'http://www.heimwerker.de/' . ltrim($redirectUrl, '/'));
-				exit();
+				$redirectUrl = $domain.$redirectUrl;
+				t3lib_utility_Http::redirect(t3lib_div::locationHeaderUrl($redirectUrl), t3lib_utility_Http::HTTP_STATUS_301);
 			}
 		}
 	}
@@ -73,6 +70,36 @@ class tx_realurl_hooksHandler  {
 			}
 		}
 		return array();
+	}
+
+	/**
+	 * getDomain from sys_domain table
+	 * @return $domain
+	 */
+	function getDomain () {
+		$table = 'sys_domain';
+		$enableFields = " AND hidden=0";
+		$where = "1=1";
+		$domain = '';
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table,$where . $enableFields, '','sorting',1);
+		$query = $GLOBALS['TYPO3_DB']->SELECTQuery('*', $table,$where . $enableFields, '','sorting',1);
+		if ($res) {
+			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+				$domain = $row['domainName'];
+				if (substr($domain, 1,-1) != '/') {
+					$domain .= '/';
+					if (substr($domain, 1,4) != 'http') {
+						if ( substr(t3lib_div::getIndpEnv('TYPO3_SITE_URL'),0,5) == 'https') {
+							$domain = 'https://'.$domain;
+						} else {
+							$domain = 'http://'.$domain;
+						}
+					}
+
+				}
+			}
+		}
+		return $domain;
 	}
 
 
