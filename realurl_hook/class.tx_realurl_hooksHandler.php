@@ -45,7 +45,8 @@ class tx_realurl_hooksHandler  {
 				}
 
 				header('HTTP/1.1 301 Moved Permanently');
-				header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
+				//header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
+				header('Location: ' . 'http://www.heimwerker.de/' . ltrim($redirectUrl, '/'));
 				exit();
 			}
 		}
