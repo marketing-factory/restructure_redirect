@@ -34,7 +34,8 @@ class tx_restructure_linkcreator {
 			$GLOBALS['TT']->start();
 		}
 	// Create the TSFE class.
-		$this->localTSFE = new $TSFEclassName($GLOBALS['TYPO3_CONF_VARS'],$rootpid,'0',1,'','','','');
+
+		$this->localTSFE = t3lib_div::makeInstance('tslib_fe',$GLOBALS['TYPO3_CONF_VARS'],$rootpid,'0',1,'','','','');
 		$this->localTSFE->connectToDB();
 		$this->localTSFE->initFEuser();
 		$this->localTSFE->fetch_the_id();
