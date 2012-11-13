@@ -37,7 +37,7 @@ class tx_realurl_hooksHandler  {
 				$redirectId = $row['pid'];
 				$params = $this->getUrlParams($hookParams[URL]);
 				$domain = t3lib_befunc::getViewDomain($redirectId).'/';
-				$domain = 'http://www.heimwerker.de';
+				$domain = 'http://www.heimwerker.de/';
 				unset ($params['id']);
 				$its_link = t3lib_div::makeInstance('tx_restructure_linkcreator',$redirectId);
 				$redirectUrl = $its_link->getLink($redirectId,$params);
