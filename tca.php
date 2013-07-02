@@ -66,7 +66,7 @@ $TCA['tx_restructureredirect_redirects'] = array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '40',
-				'eval' => 'required,trim,nospace,tx_restructure_redirect_uniquestring',
+				'eval' => 'required,trim,nospace,tx_restructure_redirect_uniquestring,tx_restructure_redirect_recursivecheck',
 			)
 		),
 		'expire' => array(

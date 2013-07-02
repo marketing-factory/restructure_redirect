@@ -16,7 +16,6 @@ class tx_restructure_linkcreator_tcemain {
 	 */
 
 	public function processCmdmap_preProcess ($command, $table, $id, $value, $obj) {
-
 		if ($command == 'move') {
 			if ($table == 'pages') {
 				$restructure_linkcreator = t3lib_div::makeInstance('tx_restructure_linkcreator',$id);
@@ -101,7 +100,6 @@ class tx_restructure_linkcreator_tcemain {
 		}
 		return 0;
 	}
-
 
 }
 ?>

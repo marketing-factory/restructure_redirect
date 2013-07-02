@@ -8,6 +8,7 @@ if (class_exists(t3lib_utility_VersionNumber) && t3lib_utility_VersionNumber::co
 } else {
 	$MLANG['default']['ll_ref']='LLL:EXT:restructure_redirect/mod/locallang_mod.xml';
 }
+$MLANG['default']['ll_ref']='LLL:EXT:restructure_redirect/mod/locallang_mod.xml';
 $MCONF['script']='_DISPATCH';
 $MCONF['access']='admin';
 $MCONF['name']='tools_redirect';
