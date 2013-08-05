@@ -31,8 +31,8 @@ class tx_realurl_hooksHandler
 			OR FIND_IN_SET('-1',tx_restructureredirect_redirects.fe_group
 		))";
 
-		$where = "(url='" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'], $table) . "'";
-		$where .= "OR url='/" . $GLOBALS['TYPO3_DB']->quoteStr($hookParams['URL'], $table) . "')";
+		$where = "(url='" . $GLOBALS['TYPO3_DB']->quoteStr(parse_url($hookParams['URL'], PHP_URL_PATH), $table) . "'";
+		$where .= " OR url='/" . $GLOBALS['TYPO3_DB']->quoteStr(parse_url($hookParams['URL'], PHP_URL_PATH), $table) . "')";
 		$where .= ' AND (expire=0 OR  expire>' . time() . ') ';
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table, $where . $enableFields, '', '', 1);
 
@@ -42,12 +42,11 @@ class tx_realurl_hooksHandler
 				$redirectId = $row['pid'];
 				$params = $this->getUrlParams($hookParams[URL]);
 				$domain = t3lib_befunc::getViewDomain($redirectId) . '/';
-				//$domain = 'http://www.heimwerker.de/';
 				unset ($params['id']);
 				$its_link = t3lib_div::makeInstance('tx_restructure_linkcreator', $redirectId);
 				$redirectUrl = $its_link->getLink($redirectId, $params);
 				if ($redirectUrl == $hookParams[URL]) {
-					$this->sendErrorMail($redirectUrl);
+					$this->sendErrorMail($redirectUrl, $row);
 					return;
 				}
 				$redirectUrl = $domain . $redirectUrl;
@@ -83,11 +82,12 @@ class tx_realurl_hooksHandler
 	/**
 	 * send error mail with url, if redirect doesn't work because url and redirect url are the same
 	 * @param $foundUrl string
+	 * @param $row array
 	 */
-	private function sendErrorMail($foundUrl) {
+	private function sendErrorMail($foundUrl, $row) {
 		$subject = 'problems on host ' . $GLOBALS['_ENV']['HTTP_HOST'] .' with url ' . $foundUrl;
 
-		mail('kontroll.heimwerker@marketing-factory.de', $subject, 'Please test the url ' . $GLOBALS['TSFE']->config['config']['baseURL'] . $foundUrl . ' on host ' . $GLOBALS['_ENV']['HTTP_HOST'] );
+		mail('kontroll.heimwerker@marketing-factory.de', $subject, 'Please test the url ' . $GLOBALS['TSFE']->config['config']['baseURL'] . $foundUrl . ' on page with id ' . $row['pid'] .' for host ' . $GLOBALS['_ENV']['HTTP_HOST'] );
 
 	}
 
