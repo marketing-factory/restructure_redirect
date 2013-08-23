@@ -8,19 +8,35 @@ class tx_restructure_redirect_recursivecheck {
 		$set=true;
 
 		//hole PID aus Post Variable (nicht sehr schön, aber scheinbar der einzige Weg?!)
-		$mypid = t3lib_div::_GP('popViewId');
+		$mypid = intval(t3lib_div::_GP('popViewId'));
 		$datas = ($_POST['data']['tx_restructureredirect_redirects']);
 		$keys = array_keys($datas);
 		$myUid = intval($keys[0]);
-		if ($myUid > 0) {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('url','tx_restructureredirect_redirects','NOT uid ='.$myUid. ' AND  deleted = 0 AND url="'.$value.'"' );
-		} else {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('url','tx_restructureredirect_redirects','deleted = 0 and url="'.$value.'"' );
-		}
+
 
 		require_once(t3lib_extMgm::extPath('restructure_redirect').'class.tx_restructure_linkcreator.php');
 		require_once(t3lib_extMgm::extPath('realurl').'class.tx_realurl.php');
-		$its_link = t3lib_div::makeInstance('tx_restructure_linkcreator',1);
+
+		/**
+		 * Fake TT for realurl
+		 */
+		require_once(PATH_t3lib.'class.t3lib_timetracknull.php');
+		$GLOBALS['TT'] = new t3lib_timeTrackNull;
+		$GLOBALS['TT']->start();
+		$GLOBALS['TT']->push('','Init for ' . __FILE__ . ' Method ' . __METHOD__);
+		$GLOBALS['TSFE'] = t3lib_div::makeInstance('tslib_fe',
+			$GLOBALS['TYPO3_CONF_VARS'],
+			t3lib_div::_GP('id'),
+			t3lib_div::_GP('type'),
+			t3lib_div::_GP('no_cache'),
+			t3lib_div::_GP('cHash'),
+			t3lib_div::_GP('jumpurl'),
+			t3lib_div::_GP('MP'),
+			t3lib_div::_GP('RDCT')
+		);
+
+		$GLOBALS['TSFE']->csConvObj = t3lib_div::makeInstance('t3lib_cs');
+
 		$tx_realurl = t3lib_div::makeInstance('myRealUrl');
 		unset($tx_realurl->extConf['redirects'][$speakingURIpath]);
 		unset($tx_realurl->extConf['redirects_regex']);
@@ -45,7 +61,7 @@ class tx_restructure_redirect_recursivecheck {
 		$ownPid = $mypid;
 
 		$where = 'pid='.$targetPid;
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table,$where . $enableFields);
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTQuery('*', $table, $where . $enableFields);
 		$urls = array();
 		// Finde alle Urls auf der Ziel Seite
 		if ($res) {
