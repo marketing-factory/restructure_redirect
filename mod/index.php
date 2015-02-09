@@ -240,7 +240,7 @@ class SC_mod_tools_redirect {
 function listRedirects()	{
 		$select_fields = '*';
 		$from_table = 'tx_restructureredirect_redirects';
-		$where_clause = 'deleted=0';
+		$where_clause = 'deleted = 0 and hidden = 0';
 		$orderBy = 'url';
 
 
