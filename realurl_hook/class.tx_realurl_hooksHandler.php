@@ -20,6 +20,11 @@ class tx_realurl_hooksHandler {
 		if (TYPO3_MODE == 'BE') {
 			return;
 		}
+		$requestDomain = $GLOBALS['_ENV']['HTTP_HOST']?:$_SERVER['HTTP_HOST'];
+		$domainData = $this->getRootPageAndLanguageForRequestDomain($requestDomain);
+		if (!$domainData) {
+			return ;
+		}
 		/** @var t3lib_db $database */
 		$this->database = $GLOBALS['TYPO3_DB'];
 		$table = "tx_restructureredirect_redirects";
@@ -39,6 +44,7 @@ class tx_realurl_hooksHandler {
 		$where = "(url='" . $this->database->quoteStr(parse_url($hookParams['URL'], PHP_URL_PATH), $table) . "'";
 		$where .= " OR url='/" . $this->database->quoteStr(parse_url($hookParams['URL'], PHP_URL_PATH), $table) . "')";
 		$where .= ' AND (expire=0 OR  expire>' . time() . ') ';
+		$where .= ' AND sys_language_uid = ' . $domainData['sys_language_uid'] . ' AND rootpage = ' . $domainData['pid'];
 		$res = $this->database->exec_SELECTQuery('*', $table, $where . $enableFields, '', '', 1);
 
 		if ($res) {
@@ -48,14 +54,21 @@ class tx_realurl_hooksHandler {
 				$params = $this->getUrlParams($hookParams['URL']);
 
 				unset ($params['id']);
+				$params['L'] = $domainData['sys_language_uid'];
 				/** @var tx_restructure_linkcreator $itsLink */
 				$itsLink = t3lib_div::makeInstance('tx_restructure_linkcreator', $redirectId);
 				$redirectUrl = $itsLink->getLink($redirectId, $params);
+				if (!isset($itsLink->settings['useLangParam']) || !$itsLink->settings['useLangParam']) {
+					$redirectUrl = $itsLink->excludeLanguageParamFromUrl($redirectUrl);
+				}
 				if ($redirectUrl == $hookParams['URL']) {
 					$this->sendErrorMail($redirectUrl, $row);
 					return;
 				}
-				if (isset($GLOBALS['TSFE']->config['config']['baseURL']) &&  $GLOBALS['TSFE']->config['config']['baseURL'] != '') {
+				if ($requestDomain && isset($itsLink->settings['useRequestDomain']) && $itsLink->settings['useRequestDomain']) {
+					$domain = $domainData['redirectTo'] ?: $requestDomain;
+					$domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');;
+				} elseif (isset($GLOBALS['TSFE']->config['config']['baseURL']) &&  $GLOBALS['TSFE']->config['config']['baseURL'] != '') {
 					$domain = rtrim($GLOBALS['TSFE']->config['config']['baseURL'], '/') . '/';
 				} else {
 					$domain = t3lib_befunc::getViewDomain($redirectId) . '/';
@@ -107,6 +120,15 @@ class tx_realurl_hooksHandler {
 			' on page with id ' . $row['pid'] . ' for host ' . $GLOBALS['_ENV']['HTTP_HOST']
 		);
 
+	}
+
+	protected function getRootPageAndLanguageForRequestDomain($domain) {
+
+		return $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+					'sys_language_uid, pid, redirectTo',
+					'sys_domain',
+					'domainName =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($domain, 'sys_domain') . t3lib_BEfunc::BEenableFields('sys_domain')
+				);
 	}
 
 }
