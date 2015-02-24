@@ -67,11 +67,11 @@ class tx_realurl_hooksHandler {
 				}
 				if ($requestDomain && isset($itsLink->settings['useRequestDomain']) && $itsLink->settings['useRequestDomain']) {
 					$domain = $domainData['redirectTo'] ?: $requestDomain;
-					$domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');;
+					$domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');
 				} elseif (isset($GLOBALS['TSFE']->config['config']['baseURL']) &&  $GLOBALS['TSFE']->config['config']['baseURL'] != '') {
 					$domain = rtrim($GLOBALS['TSFE']->config['config']['baseURL'], '/') . '/';
 				} else {
-					$domain = t3lib_befunc::getViewDomain($redirectId) . '/';
+					$domain = rtrim(t3lib_befunc::getViewDomain($redirectId), '/') . '/';
 				}
 				$redirectUrl = $domain . $redirectUrl;
 				t3lib_utility_Http::redirect(t3lib_div::locationHeaderUrl($redirectUrl), t3lib_utility_Http::HTTP_STATUS_301);
