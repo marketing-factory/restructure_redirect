@@ -57,7 +57,7 @@ class tx_realurl_hooksHandler {
 				$params['L'] = $domainData['sys_language_uid'];
 				/** @var tx_restructure_linkcreator $itsLink */
 				$itsLink = t3lib_div::makeInstance('tx_restructure_linkcreator', $redirectId);
-				$redirectUrl = $itsLink->getLink($redirectId, $params);
+				$redirectUrl = ltrim($itsLink->getLink($redirectId, $params), '/');
 				if (!isset($itsLink->settings['useLangParam']) || !$itsLink->settings['useLangParam']) {
 					$redirectUrl = $itsLink->excludeLanguageParamFromUrl($redirectUrl);
 				}
