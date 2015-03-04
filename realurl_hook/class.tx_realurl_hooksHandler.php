@@ -59,14 +59,13 @@ class tx_realurl_hooksHandler {
 				$itsLink = t3lib_div::makeInstance('tx_restructure_linkcreator', $redirectId);
 				$redirectUrl = ltrim($itsLink->getLink($redirectId, $params), '/');
 				if (!isset($itsLink->settings['useLangParam']) || !$itsLink->settings['useLangParam']) {
-					$redirectUrl = $itsLink->excludeLanguageParamFromUrl($redirectUrl);
+					$redirectUrl = ltrim($itsLink->excludeLanguageParamFromUrl($redirectUrl), '/');
 				}
 				if ($redirectUrl == $hookParams['URL']) {
 					$this->sendErrorMail($redirectUrl, $row);
 					return;
 				}
-				var_dump('useRequestDomain');
-				var_dump('requestDomain:' . $requestDomain);
+
 				if ($requestDomain && isset($itsLink->settings['useRequestDomain']) && $itsLink->settings['useRequestDomain']) {
 					$domain = $domainData['redirectTo'] ?: $requestDomain;
 					$domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');
@@ -76,9 +75,7 @@ class tx_realurl_hooksHandler {
 				} else {
 					$domain = rtrim(t3lib_befunc::getViewDomain($redirectId), '/') . '/';
 				}
-				var_dump('Domain =' . $domain);
-				var_dump('Url =' . $redirectUrl);
-				die();
+
 				$redirectUrl = $domain . $redirectUrl;
 				t3lib_utility_Http::redirect(t3lib_div::locationHeaderUrl($redirectUrl), t3lib_utility_Http::HTTP_STATUS_301);
 			}
