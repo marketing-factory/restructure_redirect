@@ -65,14 +65,20 @@ class tx_realurl_hooksHandler {
 					$this->sendErrorMail($redirectUrl, $row);
 					return;
 				}
+				var_dump('useRequestDomain');
+				var_dump('requestDomain:' . $requestDomain);
 				if ($requestDomain && isset($itsLink->settings['useRequestDomain']) && $itsLink->settings['useRequestDomain']) {
 					$domain = $domainData['redirectTo'] ?: $requestDomain;
 					$domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');
+
 				} elseif (isset($GLOBALS['TSFE']->config['config']['baseURL']) &&  $GLOBALS['TSFE']->config['config']['baseURL'] != '') {
 					$domain = rtrim($GLOBALS['TSFE']->config['config']['baseURL'], '/') . '/';
 				} else {
 					$domain = rtrim(t3lib_befunc::getViewDomain($redirectId), '/') . '/';
 				}
+				var_dump('Domain =' . $domain);
+				var_dump('Url =' . $redirectUrl);
+				die();
 				$redirectUrl = $domain . $redirectUrl;
 				t3lib_utility_Http::redirect(t3lib_div::locationHeaderUrl($redirectUrl), t3lib_utility_Http::HTTP_STATUS_301);
 			}
