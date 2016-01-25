@@ -1,9 +1,9 @@
 
   # cat=basic/11; type=boolean; label=use language params for urls
-useLangParam=0
+useLangParam = 0
 
   # cat=basic/11; type=boolean; label=use request domain for redirect
-useRequestDomain=0
+useRequestDomain = 0
 
   # cat=basic/11; type=integer; label=expire date in month after creation time
-expireRange=3
+expireRange = 3
