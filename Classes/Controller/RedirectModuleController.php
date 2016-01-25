@@ -103,7 +103,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
     {
         $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $this->iconFactory = $this->moduleTemplate->getIconFactory();
-        $this->getLanguageService()->includeLLFile('EXT:restructure_redirect/mod/locallang.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:restructure_redirect/Resources/Private/Language/locallang.xlf');
 
         $this->MCONF = array(
             'name' => $this->moduleName
@@ -171,6 +171,61 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
      */
     public function main()
     {
+        $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/AjaxDataHandler');
+
+        $this->moduleTemplate->addJavaScriptCode(
+            'RecordListInlineJS',
+            '
+				function jumpExt(URL,anchor) {	//
+					var anc = anchor?anchor:"";
+					window.location.href = URL+(T3_THIS_LOCATION?"&returnUrl="+T3_THIS_LOCATION:"")+anc;
+					return false;
+				}
+				function jumpSelf(URL) {	//
+					window.location.href = URL+(T3_RETURN_URL?"&returnUrl="+T3_RETURN_URL:"");
+					return false;
+				}
+				function jumpToUrl(URL) {
+					window.location.href = URL;
+					return false;
+				}
+
+				function setHighlight(id) {	//
+					top.fsMod.recentIds["web"]=id;
+					top.fsMod.navFrameHighlightedID["web"]="pages"+id+"_"+top.fsMod.currentBank;	// For highlighting
+
+					if (top.content && top.content.nav_frame && top.content.nav_frame.refresh_nav) {
+						top.content.nav_frame.refresh_nav();
+					}
+				}
+				function editRecords(table,idList,addParams,CBflag) {	//
+					window.location.href="' . BackendUtility::getModuleUrl('record_edit', array('returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI'))) . '&edit["+table+"]["+idList+"]=edit"+addParams;
+				}
+				function editList(table,idList) {	//
+					var list="";
+
+						// Checking how many is checked, how many is not
+					var pointer=0;
+					var pos = idList.indexOf(",");
+					while (pos!=-1) {
+						if (cbValue(table+"|"+idList.substr(pointer,pos-pointer))) {
+							list+=idList.substr(pointer,pos-pointer)+",";
+						}
+						pointer=pos+1;
+						pos = idList.indexOf(",",pointer);
+					}
+					if (cbValue(table+"|"+idList.substr(pointer))) {
+						list+=idList.substr(pointer)+",";
+					}
+
+					return list ? list : idList;
+				}
+
+				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
+				T3_THIS_LOCATION = ' . GeneralUtility::quoteJSvalue(rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . ';
+			'
+        );
+
         switch ($this->MOD_SETTINGS['function']) {
             case 'listRedirects':
                 $this->content .= $this->listRedirects();
@@ -339,7 +394,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
     {
         $select_fields = '*';
         $from_table = 'tx_restructureredirect_redirects';
-        $where_clause = 'deleted = 0 and hidden = 0';
+        $where_clause = 'deleted = 0';
         $orderBy = 'url';
 
         // Fetch active sessions of other users from storage:
@@ -355,7 +410,8 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         if (is_array($redirects)) {
             foreach ($redirects as $redirect) {
                 $outTable .= '
-                    <tr class="bgColor4" height="17" valign="top">' . '<td nowrap="nowrap" valign="top">&nbsp;'
+                    <tr class="bgColor4" height="17" valign="top" data-uid="' . $redirect['uid'] . '">
+                        <td nowrap="nowrap" valign="top">&nbsp;'
                     . htmlspecialchars($redirect['url']) . '</td>' . '<td nowrap="nowrap">'
                     . date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' '
                         . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'], $redirect['crdate']) . '</td>'
@@ -373,18 +429,42 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                     '</tr>';
             }
         }
+
         // Wrap <table> tag around the rows:
         $outTable = '
-		<table border="0" cellpadding="0" cellspacing="0" class="typo3-dblist">
-			<tr class="t3-row-header">
-				<td>' . $this->getLanguageService()->getLL('url', true) . '</td>
-				<td>' . $this->getLanguageService()->getLL('created', true) . '</td>
-				<td >' . $this->getLanguageService()->getLL('expires', true) . '</td>
-				<td colspan="2">' . $this->getLanguageService()->getLL('siteid', true) . '</td>
-			</tr>' . $outTable . '
-		</table>';
+            <thead>
+            <tr class="t3-row-header">
+                <td>' . $this->getLanguageService()->getLL('url', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('created', true) . '</td>
+                <td >' . $this->getLanguageService()->getLL('expires', true) . '</td>
+                <td colspan="2">' . $this->getLanguageService()->getLL('siteid', true) . '</td>
+            </tr>
+            </thead>
+            <tbody>
+                ' . $outTable . '
+            </tbody>';
 
-        $content = $this->doc->section($this->getLanguageService()->getLL('listRedirects', true), $outTable, 0, 1);
+        $tableHeader = '';
+        $outTable = '
+			<!--
+				DB listing of elements:	"' . htmlspecialchars($from_table) . '"
+			-->
+				<div class="panel panel-space panel-default recordlist">
+					<div class="panel-heading">
+					' . $tableHeader . '
+					</div>
+					<div class="collapse in" data-state="expanded" id="recordlist-' . htmlspecialchars($from_table) . '">
+						<div class="table-fit">
+							<table data-table="' . htmlspecialchars($from_table) . '"
+							    class="table table-striped table-hover">
+								' . $outTable . '
+							</table>
+						</div>
+					</div>
+				</div>
+			';
+
+        $content = '<h1>' . $this->getLanguageService()->getLL('listRedirects', true) . '</h1>' . $outTable;
 
         return $content;
     }
