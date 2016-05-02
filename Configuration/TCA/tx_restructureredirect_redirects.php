@@ -125,7 +125,8 @@ return array(
                 'max'      => '20',
                 'eval'     => 'datetime',
                 'checkbox' => '0',
-                'default'  => mktime(date('H'), date('i'), 0, date('m') + 3, date('d'), date('Y')),
+                // @todo change date in future to 6 month for relaunch. must be resetted to 3 later
+                'default'  => mktime(date('H'), date('i'), 0, date('m') + 6, date('d'), date('Y')),
             )
         ),
     ),
