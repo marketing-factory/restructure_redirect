@@ -14,6 +14,8 @@ CREATE TABLE tx_restructureredirect_redirects (
 	endtime int(11) DEFAULT '0' NOT NULL,
 	fe_group int(11) DEFAULT '0' NOT NULL,
 	url varchar(255) DEFAULT '' NOT NULL,
+	target_domain varchar(255) DEFAULT '' NOT NULL,
+	target_url varchar(255) DEFAULT '' NOT NULL,
 	expire int(11) DEFAULT '0' NOT NULL,
 	l10n_parent int(11) DEFAULT '0' NOT NULL,
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,

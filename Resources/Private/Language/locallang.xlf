@@ -42,6 +42,12 @@
 			<trans-unit id="url" xml:space="preserve">
 				<source>URL</source>
 			</trans-unit>
+			<trans-unit id="target_domain" xml:space="preserve">
+				<source>Target Domain</source>
+			</trans-unit>
+			<trans-unit id="target_url" xml:space="preserve">
+				<source>Target URL</source>
+			</trans-unit>
 			<trans-unit id="listRedirects" xml:space="preserve">
 				<source>List Redirects</source>
 			</trans-unit>

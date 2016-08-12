@@ -27,8 +27,11 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\TimeTracker\NullTimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * Main script class
@@ -37,6 +40,12 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
  */
 class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 {
+
+    /**
+     * @var array
+     */
+    private static $sysDomains;
+
     /**
      * @var array
      */
@@ -394,7 +403,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
     {
         $select_fields = '*';
         $from_table = 'tx_restructureredirect_redirects';
-        $where_clause = 'deleted = 0';
+        $where_clause = 'deleted = 0 and url <> ""';
         $orderBy = 'url';
 
         // Fetch active sessions of other users from storage:
@@ -405,14 +414,97 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             '',
             $orderBy
         );
+
+        $GLOBALS['TT'] = new NullTimeTracker();
+
+        $forceRebuild = false;
         // Process and visualized each active session as a table row:
         $outTable = '';
         if (is_array($redirects)) {
-            foreach ($redirects as $redirect) {
+            foreach ($redirects as $key => $redirect) {
+                if ($forceRebuild || $redirect['target_url'] === '' || $redirect['target_domain'] === '') {
+                    if (static::$sysDomains === null) {
+                        static::$sysDomains = (array)$this->getDatabaseConnection()
+                            ->exec_SELECTgetRows('*', 'sys_domain', '', 'sys_language_uid', '', '', 'sys_language_uid');
+                    }
+
+                    try {
+                        if ($redirect['sys_language_uid'] > 0) {
+                            $cnt = (int)$this->getDatabaseConnection()->exec_SELECTcountRows(
+                                '*',
+                                'pages_language_overlay',
+                                'pid = '  . (int)$redirect['pid'] . ' and sys_language_uid = ' . (int)$redirect['sys_language_uid'] . ' and hidden = 0 and deleted = 0'
+                            );
+                        } else {
+                            $cnt = (int)$this->getDatabaseConnection()->exec_SELECTcountRows(
+                                '*',
+                                'pages',
+                                'uid = '  . (int)$redirect['pid'] . ' and hidden = 0 and deleted = 0'
+                            );
+                        }
+
+                        if ($cnt === 0) {
+                            $this->getDatabaseConnection()->exec_UPDATEquery(
+                                'tx_restructureredirect_redirects',
+                                'uid = ' . (int) $redirect['uid'],
+                                [
+                                    'target_url' => '-1',
+                                ]
+                            );
+                            throw new \Exception;
+                        }
+
+                        $_GET['L'] = (int)$redirect['sys_language_uid'];
+                        $GLOBALS['TYPO3_CONF_VARS']['FE']['pageNotFound_handling'] = '';
+
+                        unset($GLOBALS['TSFE']);
+                        $TSFE = GeneralUtility::makeInstance(
+                            TypoScriptFrontendController::class,
+                            $GLOBALS['TYPO3_CONF_VARS'],
+                            $redirect['pid'],
+                            0
+                        );
+                        $GLOBALS['TSFE'] = $TSFE;
+
+                        $TSFE->connectToDB();
+                        $TSFE->initFEuser();
+                        $TSFE->determineId();
+                        $TSFE->initTemplate();
+                        $TSFE->getConfigArray();
+                        $TSFE->settingLanguage();
+                        $TSFE->cObj = GeneralUtility::makeInstance(ContentObjectRenderer::class);
+
+                        $targetUrl = $TSFE->cObj->typoLink_URL([
+                            'parameter' => $redirect['pid']
+                        ]);
+
+                        $targetDomain = static::$sysDomains[$redirect['sys_language_uid']]['domainName'];
+
+                        $this->getDatabaseConnection()->exec_UPDATEquery(
+                            'tx_restructureredirect_redirects',
+                            'uid = ' . (int) $redirect['uid'],
+                            [
+                                'target_domain' => (string)$targetDomain,
+                                'target_url' => (string)$targetUrl,
+                            ]
+                        );
+
+                        $redirect['target_domain'] = $targetDomain;
+                        $redirect['target_url'] = $targetUrl;
+                    } catch (\Exception $e) {
+
+                    }
+                }
+
                 $outTable .= '
                     <tr class="bgColor4" height="17" valign="top" data-uid="' . $redirect['uid'] . '">
                         <td nowrap="nowrap" valign="top">&nbsp;'
-                    . htmlspecialchars($redirect['url']) . '</td>' . '<td nowrap="nowrap">'
+                    . htmlspecialchars($redirect['url']) . '</td>' .
+
+                    '<td nowrap="nowrap" valign="top">' . $redirect['target_domain'] . '</td>' .
+                    '<td nowrap="nowrap" valign="top">' . $redirect['target_url'] . '</td>' .
+
+                    '<td nowrap="nowrap">'
                     . date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' '
                         . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'], $redirect['crdate']) . '</td>'
                     . '<td nowrap="nowrap">';
@@ -435,6 +527,8 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             <thead>
             <tr class="t3-row-header">
                 <td>' . $this->getLanguageService()->getLL('url', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('target_domain', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('target_url', true) . '</td>
                 <td>' . $this->getLanguageService()->getLL('created', true) . '</td>
                 <td >' . $this->getLanguageService()->getLL('expires', true) . '</td>
                 <td colspan="2">' . $this->getLanguageService()->getLL('siteid', true) . '</td>
