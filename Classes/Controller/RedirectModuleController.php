@@ -424,16 +424,23 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             foreach ($redirects as $key => $redirect) {
                 if ($forceRebuild || $redirect['target_url'] === '' || $redirect['target_domain'] === '') {
                     if (static::$sysDomains === null) {
-                        static::$sysDomains = (array)$this->getDatabaseConnection()
-                            ->exec_SELECTgetRows('*', 'sys_domain', '', 'sys_language_uid', '', '', 'sys_language_uid');
+                        static::$sysDomains = (array)$this->getDatabaseConnection()->exec_SELECTgetRows(
+                            '*',
+                            'sys_domain',
+                            '',
+                            'sys_language_uid',
+                            '',
+                            '',
+                            'sys_language_uid'
+                        );
                     }
 
                     try {
                         if ($redirect['sys_language_uid'] > 0) {
                             $cnt = (int)$this->getDatabaseConnection()->exec_SELECTcountRows(
                                 '*',
-                                'pages_language_overlay',
-                                'pid = '  . (int)$redirect['pid'] . ' and sys_language_uid = ' . (int)$redirect['sys_language_uid'] . ' and hidden = 0 and deleted = 0'
+                                'pages p join pages_language_overlay o on p.uid = o.pid and p.hidden = 0 and p.deleted = 0 and o.hidden = 0 and o.deleted = 0',
+                                'o.pid = '  . (int)$redirect['pid'] . ' and o.sys_language_uid = ' . (int)$redirect['sys_language_uid']
                             );
                         } else {
                             $cnt = (int)$this->getDatabaseConnection()->exec_SELECTcountRows(
