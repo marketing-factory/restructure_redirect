@@ -44,8 +44,9 @@ class HooksHandlerHook
 			OR FIND_IN_SET('-1',tx_restructureredirect_redirects.fe_group
 		))";
 
-        $url = $this->getDatabaseConnection()->quoteStr(parse_url($hookParams['URL'], PHP_URL_PATH), $table);
-        $where = '(url = "' . $url . '" OR url="/' . $url . '") AND (expire = 0 OR  expire > ' . time() . ')
+        $url = pathinfo($hookParams['URL'], PATHINFO_DIRNAME) . '/' . pathinfo($hookParams['URL'], PATHINFO_FILENAME);
+        $url = $this->getDatabaseConnection()->quoteStr($url, $table);
+        $where = '(url LIKE "' . $url . '%" OR url LIKE "/' . $url . '%") AND (expire = 0 OR  expire > ' . time() . ')
             AND sys_language_uid = ' . $domainData['sys_language_uid'] . ' AND rootpage = ' . $domainData['pid'];
 
         $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
