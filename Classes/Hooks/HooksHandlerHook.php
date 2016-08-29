@@ -45,8 +45,10 @@ class HooksHandlerHook
 		))";
 
         $url = pathinfo($hookParams['URL'], PATHINFO_DIRNAME) . '/' . pathinfo($hookParams['URL'], PATHINFO_FILENAME);
+        $urlWithExtension = $url . '.' . pathinfo($hookParams['URL'], PATHINFO_EXTENSION);
         $url = $this->getDatabaseConnection()->quoteStr($url, $table);
-        $where = '(url LIKE "' . $url . '%" OR url LIKE "/' . $url . '%") AND (expire = 0 OR  expire > ' . time() . ')
+        $where = '(url = "' . $urlWithExtension . '" OR url = "/' . $urlWithExtension . '" OR url = "' .
+            $url . '/" OR url = "/' . $url . '/") AND (expire = 0 OR  expire > ' . time() . ')
             AND sys_language_uid = ' . $domainData['sys_language_uid'] . ' AND rootpage = ' . $domainData['pid'];
 
         $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
