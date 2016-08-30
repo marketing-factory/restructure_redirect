@@ -73,7 +73,11 @@ class HooksHandlerHook
                 && $linkCreator->settings['useRequestDomain']
             ) {
                 $domain = $domainData['redirectTo'] ?: $requestDomain;
-                $domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');
+                if (strpos($domain, 'https://')) {
+                    $domain = 'https://' . ltrim(rtrim($domain, '/') . '/', 'https://');
+                } else {
+                    $domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');
+                }
             } elseif (isset($GLOBALS['TSFE']->config['config']['baseURL'])
                 && $GLOBALS['TSFE']->config['config']['baseURL'] != ''
             ) {
