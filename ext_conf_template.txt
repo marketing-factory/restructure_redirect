@@ -7,3 +7,6 @@ useRequestDomain = 0
 
   # cat=basic/11; type=integer; label=expire date in month after creation time
 expireRange = 3
+
+  # cat=basic/11; type=boolean; label=use request domain for redirect
+forceSSLDomain = 0

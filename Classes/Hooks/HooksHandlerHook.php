@@ -86,6 +86,10 @@ class HooksHandlerHook
                 $domain = rtrim(BackendUtility::getViewDomain($redirectId), '/') . '/';
             }
 
+            if (isset($linkCreator->settings['forceSSLDomain']) && $linkCreator->settings['forceSSLDomain']) {
+                $domain = 'https://' . ltrim(ltrim($domain, 'http://'), 'https://');
+            }
+
             $redirectUrl = $domain . $redirectUrl;
             \TYPO3\CMS\Core\Utility\HttpUtility::redirect(
                 GeneralUtility::locationHeaderUrl($redirectUrl),
