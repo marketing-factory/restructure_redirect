@@ -1,5 +1,5 @@
 <?php
-namespace MFC\RestructureRedirect\Controller;
+namespace Mfc\RestructureRedirect\Controller;
 
 /***************************************************************
  *  Copyright notice
@@ -30,8 +30,6 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\TimeTracker\NullTimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * Main script class
@@ -110,7 +108,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
      */
     public function __construct()
     {
-        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
+        $this->moduleTemplate = GeneralUtility::makeInstance('TYPO3\\CMS\Backend\\Template\\ModuleTemplate');
         $this->iconFactory = $this->moduleTemplate->getIconFactory();
         $this->getLanguageService()->includeLLFile('EXT:restructure_redirect/Resources/Private/Language/locallang.xlf');
 
@@ -141,8 +139,8 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         // **************************
         // Initializing
         // **************************
-        /** @var \TYPO3\CMS\Backend\Template\DocumentTemplate::class doc */
-        $this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
+        /** @var \TYPO3\CMS\Backend\Template\DocumentTemplate doc */
+        $this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\Backend\\Template\\DocumentTemplate');
         $this->doc->setModuleTemplate('EXT:restructure_redirect/mod/redirects.html');
 
         $this->doc->form = '<form action="" method="post">';
@@ -278,7 +276,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         // Shortcut
         $shortcutButton = $buttonBar->makeShortcutButton()
             ->setModuleName($this->MCONF['name'])
-            ->setGetVariables(['id', 'M']);
+            ->setGetVariables(array('id', 'M'));
         $buttonBar->addButton($shortcutButton);
     }
 
@@ -403,7 +401,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
     {
         $select_fields = '*';
         $from_table = 'tx_restructureredirect_redirects';
-        $where_clause = 'deleted = 0 and url <> ""';
+        $where_clause = 'deleted = 0 and hidden = 0 and url <> "" and (expire = 0 or expire > unix_timestamp(ADDDATE(CURDATE(), INTERVAL - 1 YEAR)))';
         $orderBy = 'url';
 
         // Fetch active sessions of other users from storage:
@@ -454,9 +452,9 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                             $this->getDatabaseConnection()->exec_UPDATEquery(
                                 'tx_restructureredirect_redirects',
                                 'uid = ' . (int) $redirect['uid'],
-                                [
+                                array(
                                     'target_url' => '-1',
-                                ]
+                                )
                             );
                             throw new \Exception;
                         }
@@ -466,7 +464,7 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 
                         unset($GLOBALS['TSFE']);
                         $TSFE = GeneralUtility::makeInstance(
-                            TypoScriptFrontendController::class,
+                            'TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController',
                             $GLOBALS['TYPO3_CONF_VARS'],
                             $redirect['pid'],
                             0
@@ -479,27 +477,26 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                         $TSFE->initTemplate();
                         $TSFE->getConfigArray();
                         $TSFE->settingLanguage();
-                        $TSFE->cObj = GeneralUtility::makeInstance(ContentObjectRenderer::class);
+                        $TSFE->cObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
 
-                        $targetUrl = $TSFE->cObj->typoLink_URL([
+                        $targetUrl = $TSFE->cObj->typoLink_URL(array(
                             'parameter' => $redirect['pid']
-                        ]);
+                        ));
 
                         $targetDomain = static::$sysDomains[$redirect['sys_language_uid']]['domainName'];
 
                         $this->getDatabaseConnection()->exec_UPDATEquery(
                             'tx_restructureredirect_redirects',
                             'uid = ' . (int) $redirect['uid'],
-                            [
+                            array(
                                 'target_domain' => (string)$targetDomain,
                                 'target_url' => (string)$targetUrl,
-                            ]
+                            )
                         );
 
                         $redirect['target_domain'] = $targetDomain;
                         $redirect['target_url'] = $targetUrl;
                     } catch (\Exception $e) {
-
                     }
                 }
 
@@ -521,7 +518,18 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                 } else {
                     $outTable .= $this->getLanguageService()->getLL('never', true);
                 }
-                $outTable .= '</td>' . '<td nowrap="nowrap">' . $redirect['pid'] . '&nbsp;&nbsp;</td>'
+                $outTable .= '</td>' . '<td nowrap="nowrap">'.$redirect['sys_language_uid'].'&nbsp;&nbsp;</td>' .
+                    '<td nowrap="nowrap">' . $redirect['hits_count'] . '&nbsp;&nbsp;</td><td nowrap="nowrap">';
+
+                if ($redirect['last_called'] > 0) {
+                    $outTable .= date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' '
+                        . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'], $redirect['last_called']);
+                } else {
+                    $outTable .= $this->getLanguageService()->getLL('never', true);
+                }
+
+                $outTable .= '<td nowrap="nowrap">' . htmlspecialchars($redirect['last_referer']) . '&nbsp;&nbsp;</td>'.
+                    '<td nowrap="nowrap">' . $redirect['pid'] . '&nbsp;&nbsp;</td>'
                     . '<td nowrap="nowrap">' . $this->elementLinks('tx_restructureredirect_redirects', $redirect)
                     . '</td>' .
 
@@ -537,7 +545,11 @@ class RedirectModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                 <td>' . $this->getLanguageService()->getLL('target_domain', true) . '</td>
                 <td>' . $this->getLanguageService()->getLL('target_url', true) . '</td>
                 <td>' . $this->getLanguageService()->getLL('created', true) . '</td>
-                <td >' . $this->getLanguageService()->getLL('expires', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('expires', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('language', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('hits_count', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('last_called', true) . '</td>
+                <td>' . $this->getLanguageService()->getLL('last_referer', true) . '</td>
                 <td colspan="2">' . $this->getLanguageService()->getLL('siteid', true) . '</td>
             </tr>
             </thead>

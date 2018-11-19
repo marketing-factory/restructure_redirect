@@ -19,6 +19,9 @@ CREATE TABLE tx_restructureredirect_redirects (
 	expire int(11) DEFAULT '0' NOT NULL,
 	l10n_parent int(11) DEFAULT '0' NOT NULL,
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
+	hits_count int(11) DEFAULT '0' NOT NULL,
+	last_called int(11) DEFAULT '0' NOT NULL,
+	last_referer varchar(255) DEFAULT '' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid)
@@ -29,4 +32,18 @@ CREATE TABLE tx_restructureredirect_redirects (
 #
 CREATE TABLE sys_domain (
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
+);
+
+#
+# Table structure for table 'tx_restructureredirect_redirects'
+#
+CREATE TABLE tx_restructureredirect_redirects_log (
+  uid int(11) NOT NULL auto_increment,
+  redirectUid int(11) DEFAULT '0' NOT NULL,
+  tstamp int(11) DEFAULT '0' NOT NULL,
+  crdate int(11) DEFAULT '0' NOT NULL,
+  referer varchar(255) DEFAULT '' NOT NULL,
+
+  PRIMARY KEY (uid),
+  KEY redirectUid (redirectUid)
 );

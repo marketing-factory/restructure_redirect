@@ -1,23 +1,34 @@
 <?php
-namespace MFC\RestructureRedirect\Utility;
+namespace Mfc\RestructureRedirect\Utility;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * Class LinkCreator
  */
 class LinkCreator
 {
+    /**
+     * @var object|\TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController
+     */
     protected $localTSFE;
 
+    /**
+     * @var array
+     */
     public $settings;
 
+    /**
+     * @var int
+     */
     protected $parent;
 
     public function __construct($uid)
     {
-        $rootline = \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($uid);
+        $rootline = BackendUtility::BEgetRootLine($uid);
         $rootpid = 1;
 
         $this->settings = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['restructure_redirect']);
@@ -35,9 +46,9 @@ class LinkCreator
             $GLOBALS['TT']->start();
         }
         // Create the TSFE class.
-        /** @var \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController localTSFE */
+        /** @var TypoScriptFrontendController localTSFE */
         $this->localTSFE = GeneralUtility::makeInstance(
-            \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class,
+            'TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController',
             $GLOBALS['TYPO3_CONF_VARS'],
             $rootpid,
             0,
@@ -67,8 +78,8 @@ class LinkCreator
      */
     public function getLink($uid, $urlParameters = array())
     {
-        /** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $cObj */
-        $cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
+        /** @var ContentObjectRenderer $cObj */
+        $cObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
         $cObj->start(array(), '');
         $linkURL = $cObj->getTypoLink_URL($uid, $urlParameters);
 
@@ -86,25 +97,55 @@ class LinkCreator
      */
     public function createRedirectEntry($pid, $link, $sysLanguageUid)
     {
-        $table = "tx_restructureredirect_redirects";
-        if (!$sysLanguageUid) {
-            $this->parent = 0;
+        if ($this->pageIsActive($pid, $sysLanguageUid)) {
+            $table = "tx_restructureredirect_redirects";
+            $this->getParentPageId($pid, $link, $sysLanguageUid);
+            if (!$this->linkExists($link, $sysLanguageUid)) {
+                $field_values = array(
+                    'url' => $link,
+                    'pid' => $pid,
+                    'rootpage' => $this->getRootlinePage($pid),
+                    'sys_language_uid' => $sysLanguageUid,
+                    'l10n_parent' => $this->parent,
+                    'tstamp' => time(),
+                    'crdate' => time(),
+                    'expire' => mktime(
+                        date('H'),
+                        date('i'),
+                        0,
+                        date('m') + $this->settings['expireRange'],
+                        date('d'),
+                        date('Y')
+                    ),
+                );
+                $this->getDatabaseConnection()->exec_INSERTquery($table, $field_values);
+            }
         }
-        if (!$this->linkExists($link, $sysLanguageUid)) {
-            $field_values = array(
-                'url' => $link,
-                'pid' => $pid,
-                'rootpage' => $this->getRootlinePage($pid),
-                'sys_language_uid' => $sysLanguageUid,
-                'l10n_parent' => $this->parent,
-                'tstamp' => time(),
-                'crdate' => time(),
-                'expire' => mktime(date('H'), date('i'), 0, date('m') + $this->settings['expireRange'], date('d'),
-                    date('Y')),
-            );
-            $this->getDatabaseConnection()->exec_INSERTquery($table, $field_values);
-            if (!$sysLanguageUid) {
-                $this->linkExists($link, $sysLanguageUid);
+    }
+
+    /**
+     * @param int $pid
+     * @param string $link
+     * @param int $sysLanguageUid
+     */
+    public function removeRedirectEntry($pid, $link, $sysLanguageUid)
+    {
+        $table = "tx_restructureredirect_redirects";
+        $this->getParentPageId($pid, $link, $sysLanguageUid);
+        if ($this->linkExists($link, $sysLanguageUid)) {
+            $where = 'pid = ' . $pid . ' AND sys_language_uid =' . $sysLanguageUid .
+                ' AND url =' . $this->getDatabaseConnection()->fullQuoteStr($link, $table);
+            $this->getDatabaseConnection()->exec_DELETEquery($table, $where);
+        }
+    }
+
+    protected function getParentPageId($pid, $link, $sysLanguageUid)
+    {
+        if (!$sysLanguageUid) {
+            $this->setParent(0);
+        } else {
+            if ($this->linkExists($link, $sysLanguageUid)) {
+                $this->setParent($pid);
             }
         }
     }
@@ -125,14 +166,30 @@ class LinkCreator
             $this->getDatabaseConnection()->fullQuoteStr($link, $table);
         $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
         if ($row) {
-            if ($row['sys_language_uid'] == 0) {
-                $this->parent = $row['uid'];
-            }
-
             return true;
         }
 
         return false;
+    }
+
+    public function pageIsActive($pageId, $sys_language_uid)
+    {
+        if ($sys_language_uid) {
+            $result = $this->getDatabaseConnection()->exec_SELECTcountRows(
+                '*',
+                'pages_language_overlay',
+                'pid =' . $pageId .' AND sys_language_uid=' . $sys_language_uid .
+                BackendUtility::BEenableFields('pages_language_overlay')
+            );
+        } else {
+            $result = $this->getDatabaseConnection()->exec_SELECTcountRows(
+                '*',
+                'pages',
+                'uid =' . $pageId . BackendUtility::BEenableFields('pages')
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -157,12 +214,24 @@ class LinkCreator
             foreach ($parts['query'] as $key => $value) {
                 $parts['query'][$key] = $key . '=' . $value;
             }
-            $link .= '?' . implode('&', $parts['qeury']);
+            $link .= '?' . implode('&', $parts['query']);
         }
 
         return $link;
     }
 
+    /**
+     * @param int $parentValue
+     */
+    public function setParent($parentValue)
+    {
+        $this->parent = $parentValue;
+    }
+
+    /**
+     * @param int $uid
+     * @return int
+     */
     protected function getRootlinePage($uid)
     {
         if ($uid == $GLOBALS['TSFE']->id) {
@@ -174,18 +243,45 @@ class LinkCreator
         return $rootPage;
     }
 
+    /**
+     * @param int $uid
+     * @return int
+     */
     protected function getRecursivePid($uid)
     {
-        $result = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('uid, pid', 'pages', 'uid =' . $uid);
+        $result = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
+            'uid, pid, is_siteroot',
+            'pages',
+            'uid =' . $uid
+        );
 
         $rootPage = 0;
-        if ($result['pid'] > 0) {
+        if ($result['pid'] > 0 && $result['is_siteroot'] == 0) {
             $rootPage = $this->getRecursivePid($result['pid']);
-        } elseif ($result['pid'] == 0) {
+        } elseif ($result['pid'] == 0 || $result['is_siteroot'] > 0) {
             $rootPage = $uid;
         }
 
         return $rootPage;
+    }
+
+    public function removeRedirect()
+    {
+        return (bool) $this->settings['deleteRedirect'];
+    }
+
+    /**
+     * Deletes the entire cache
+     *
+     * @param int $pageId
+     * @return void
+     */
+    public function clearPageCache($pageId)
+    {
+        /** @var \TYPO3\CMS\Core\DataHandling\DataHandler $tce */
+        $tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+        $tce->admin = 1;
+        $tce->clear_cacheCmd($pageId);
     }
 
     /**

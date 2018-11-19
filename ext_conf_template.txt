@@ -8,5 +8,14 @@ useRequestDomain = 0
   # cat=basic/11; type=integer; label=expire date in month after creation time
 expireRange = 3
 
-  # cat=basic/11; type=boolean; label=use request domain for redirect
+  # cat=basic/11; type=boolean; label=force the usage from SSL for redirect
 forceSSLDomain = 0
+
+# cat=basic/11; type=boolean; label=delete redirect, if before and after url is the same
+deleteRedirect = 0
+
+  # cat=basic/11; type=string; label=Mail address for error mail
+recipientMailAddress =
+
+  # cat=basic/11; type=string; label=additional path segment for url
+additionalPathSegment =

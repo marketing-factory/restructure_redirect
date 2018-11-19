@@ -45,12 +45,6 @@
 			<trans-unit id="url" xml:space="preserve">
 				<source>URL</source>
 			</trans-unit>
-			<trans-unit id="target_domain" xml:space="preserve">
-				<source>Target Domain</source>
-			</trans-unit>
-			<trans-unit id="target_url" xml:space="preserve">
-				<source>Target URL</source>
-			</trans-unit>
 			<trans-unit id="hits_count" xml:space="preserve">
 				<source>Hits</source>
 			</trans-unit>

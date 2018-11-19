@@ -4,67 +4,65 @@ namespace Mfc\RestructureRedirect\Hooks;
 use Mfc\RestructureRedirect\Utility\LinkCreator;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 
-class MoveRecordHook
+class UpdateRecordHook
 {
+
     /**
-     * processCmdmap_preProcess using the processCmdmap_preProcess hook
+     * hook_processDatamap_afterDatabaseOperations using the hook_processDatamap_afterDatabaseOperations hook
      * on moving a page in the pagetree redirects will be added automatically
      *
-     * @param string $command
+     * @param string $status
      * @param string $table
      * @param string $id
-     * @param string $value
+     * @param string $fieldArray
      *
      * @return void
      */
-    public function processCmdmap_preProcess($command, $table, $id, $value)
+    public function processDatamap_postProcessFieldArray($status, $table, $id, $fieldArray, $pObj)
     {
-        if ($command == 'move') {
-            if ($table == 'pages') {
-                /** @var LinkCreator $linkCreator */
-                $linkCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('Mfc\\RestructureRedirect\\Utility\\LinkCreator', $id);
-                if ($value < 0) {
-                    $target = $this->getPidFromPageID($value * -1);
+        if ($status == 'update' && isset($fieldArray['title'])) {
+            if ($table == 'pages' || $table == 'pages_language_overlay') {
+                if ($table == 'pages_language_overlay') {
+                    $pid = $this->getParentPageEntry($id);
                 } else {
-                    $target = $value;
+                    $pid = $id;
                 }
-                $source = $this->getPidFromPageID($id);
 
-                if ($source == $target) {
-                    return;
+                /** @var LinkCreator $linkCreator */
+                $linkCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('Mfc\\RestructureRedirect\\Utility\\LinkCreator', $pid);
+
+                $parent = $this->getPidFromPageID($id);
+                $uid = $id;
+                $language = (int) $pObj->datamap[$table][$id]['sys_language_uid'];
+                if ($language) {
+                    $uid = $this->getParentPageEntry($id);
+                    $linkCreator->setParent(0);
                 }
-                $this->createRedirectsForSource($id, $source, $linkCreator);
+                $this->createRedirectsForSourceWithLanguage($uid, $parent, $linkCreator, $language);
             }
         }
     }
-
     /**
-     * processCmdmap_postProcess using the processCmdmap_postProcess hook
+     * hook_processDatamap_afterDatabaseOperations using the hook_processDatamap_afterDatabaseOperations hook
      * on moving a page in the pagetree redirects will be added automatically
      *
-     * @param string $command
+     * @param string $status
      * @param string $table
      * @param string $id
-     * @param string $value
+     * @param string $fieldArray
      *
      * @return void
      */
-    public function processCmdmap_postProcess($command, $table, $id, $value)
+    public function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, $pObj)
     {
-        if ($command == 'move') {
+        if ($status == 'update' && isset($fieldArray['title'])) {
             if ($table == 'pages') {
                 /** @var LinkCreator $linkCreator */
                 $linkCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('Mfc\\RestructureRedirect\\Utility\\LinkCreator', $id);
                 if ($linkCreator->removeRedirect()) {
-                    if ($value < 0) {
-                        $target = $this->getPidFromPageID($value * -1);
-                    } else {
-                        $target = $value;
-                    }
-
-                    $this->removeRedirectsForTarget($id, $target, $linkCreator);
+                    $parent = $this->getPidFromPageID($id);
+                    $this->removeRedirectsForTarget($id, $parent, $linkCreator);
                 }
-
             }
         }
     }
@@ -104,7 +102,7 @@ class MoveRecordHook
     {
         $table = 'pages';
         $enableFields = BackendUtility::BEenableFields($table);
-        $where = 'pages.deleted = 0 and pid = ' . $uid;
+        $where = 'pages.deleted = 0 AND pid = ' . $uid;
         $res = $this->getDatabaseConnection()->exec_SELECTQuery('*', $table, $where . $enableFields);
         while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
             $subPages[] = $row;
@@ -163,8 +161,31 @@ class MoveRecordHook
                 }
                 if ($link != '') {
                     $linkCreator->createRedirectEntry($subPage['uid'], $link, $sysLanguageUid);
-                    $linkCreator->clearPageCache($subPage['uid']);
                 }
+            }
+        }
+    }
+
+    /**
+     * @param $id
+     * @param $source
+     * @param LinkCreator $linkCreator
+     * @param int $language
+     */
+    protected function createRedirectsForSourceWithLanguage($id, $source, $linkCreator, $language)
+    {
+        $subPages = $this->getSubpages($id);
+        $subPages[$id] = array('pid' => $source, 'uid' => $id);
+        foreach ($subPages as $subPage) {
+            $params = array('L' => $language);
+            $link = $linkCreator->getLink($subPage['uid'], $params);
+            if (!isset($linkCreator->settings['useLangParam'])
+                || !$linkCreator->settings['useLangParam']
+            ) {
+                $link = $linkCreator->excludeLanguageParamFromUrl($link);
+            }
+            if ($link != '') {
+                $linkCreator->createRedirectEntry($subPage['uid'], $link, $language);
             }
         }
     }
@@ -192,5 +213,18 @@ class MoveRecordHook
                 }
             }
         }
+    }
+
+    protected function getParentPageEntry($id)
+    {
+        $table = 'pages_language_overlay';
+        $pid = 0;
+        $where = 'uid = ' . $id . BackendUtility::BEenableFields($table);
+        $res = $this->getDatabaseConnection()->exec_SELECTQuery('pid', $table, $where);
+        while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+            $pid = $row['pid'];
+        }
+
+        return $pid;
     }
 }

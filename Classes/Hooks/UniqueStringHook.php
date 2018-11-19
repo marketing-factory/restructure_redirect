@@ -1,7 +1,9 @@
 <?php
-namespace MFC\RestructureRedirect\Hooks;
+namespace Mfc\RestructureRedirect\Hooks;
 
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 
 class UniqueStringHook
 {
@@ -40,13 +42,13 @@ class UniqueStringHook
         if (count($result) > 0) {
             $set = false;
             $message = GeneralUtility::makeInstance(
-                't3lib_FlashMessage',
+                'FlashMessage',
                 'URL "' . $value . '" schon vorhanden',
                 'URL nicht geändert!',
-                \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+                FlashMessage::ERROR
             );
-            /** @var \TYPO3\CMS\Core\Messaging\FlashMessageQueue $messageQueue */
-            $messageQueue = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageQueue::class);
+            /** @var FlashMessageQueue $messageQueue */
+            $messageQueue = GeneralUtility::makeInstance('FlashMessageQueue');
             $messageQueue->enqueue($message);
         }
 

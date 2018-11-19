@@ -38,19 +38,8 @@ return array(
                 'default' => '0'
             )
         ),
-        'sys_language_uid' => array(
-            'exclude' => 1,
-            'label' => 'LLL:EXT:cms/locallang_ttc.xml:sys_language_uid_formlabel',
-            'config' => array(
-                'type' => 'select',
-                'foreign_table' => 'sys_language',
-                'foreign_table_where' => 'ORDER BY sys_language.title',
-                'items' => array(
-                    array('LLL:EXT:lang/locallang_general.xml:LGL.allLanguages', -1),
-                    array('LLL:EXT:lang/locallang_general.xml:LGL.default_value', 0)
-                )
-            )
-        ),
+        'sys_language_uid' => $GLOBALS['TCA']['tt_content']['columns']['sys_language_uid'],
+
         'l10n_parent' => array(
             'displayCond' => 'FIELD:sys_language_uid:>:0',
             'exclude' => 1,
@@ -88,7 +77,7 @@ return array(
                 'checkbox' => '0',
                 'default'  => '0',
                 'range'    => array(
-                    'upper' => mktime(3, 14, 7, 1, 19, 2038),
+                    'upper' => mktime(3, 14, 7, 1, 19, date('Y')+10),
                     'lower' => mktime(0, 0, 0, date('m')-1, date('d'), date('Y'))
                 )
             )
@@ -129,9 +118,46 @@ return array(
                 'default'  => mktime(date('H'), date('i'), 0, date('m') + 6, date('d'), date('Y')),
             )
         ),
+        'last_called' => array(
+            'exclude' => 1,
+            'label' => $languageFile . 'tx_restructureredirect_redirects.last_called',
+            'config'  => array(
+                'type'     => 'input',
+                'size'     => '8',
+                'max'      => '20',
+                'eval'     => 'datetime',
+                'checkbox' => '0',
+                'default'  => '0',
+                'readOnly' => 1,
+            )
+        ),
+        'last_referer' => array(
+            'exclude' => 1,
+            'label' => $languageFile . 'tx_restructureredirect_redirects.last_referer',
+            'config'  => array(
+                'type'     => 'input',
+                'size'     => '60',
+                'checkbox' => '0',
+                'default'  => '',
+                'readOnly' => 1,
+            )
+        ),
+        'hits_count' => array(
+            'exclude' => 1,
+            'label' => $languageFile . 'tx_restructureredirect_redirects.hits_count',
+            'config'  => array(
+                'type'     => 'input',
+                'size'     => '8',
+                'max'      => '20',
+                'checkbox' => '0',
+                'default'  => 0,
+                'readOnly' => 1,
+            )
+        ),
     ),
     'types' => array(
-        '0' => array('showitem' => 'hidden, sys_language_uid, l10n_parent;;1;;1-1-1, url, expire')
+        '0' => array('showitem' => 'hidden, sys_language_uid, l10n_parent;;1;;1-1-1, url, expire,
+         last_called, last_referer, hits_count')
     ),
     'palettes' => array(
         '1' => array('showitem' => 'starttime, endtime, fe_group')

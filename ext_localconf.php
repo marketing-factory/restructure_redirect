@@ -6,11 +6,14 @@ defined('TYPO3_MODE') or die('Access denied.');
 ');
 
 # register userFunc
-$TYPO3_CONF_VARS['EXTCONF']['realurl']['decodeSpURL_preProc']['restructure_redirect'] =
-    \MFC\RestructureRedirect\Hooks\HooksHandlerHook::class . '->user_decodeSpURL_preProc';
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc']['restructure_redirect'] =
+    'Mfc\\RestructureRedirect\\Hooks\\HooksHandlerHook->user_decodeSpURL_preProc';
 
-$TYPO3_CONF_VARS['SC_OPTIONS']['tce']['formevals']['tx_restructure_redirect_uniquestring'] =
-    \MFC\RestructureRedirect\Hooks\UniqueStringHook::class;
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals']['tx_restructure_redirect_uniquestring'] =
+    'Mfc\\RestructureRedirect\\Hooks\\UniqueStringHook';
 
-$TYPO3_CONF_VARS['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass']['restructure_redirect'] =
-    \MFC\RestructureRedirect\Hooks\MoveRecordHook::class;
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass']['restructure_redirectMove'] =
+    'Mfc\\RestructureRedirect\\Hooks\\MoveRecordHook';
+
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass']['restructure_redirectUpdate'] =
+    'Mfc\\RestructureRedirect\\Hooks\\UpdateRecordHook';

@@ -1,7 +1,7 @@
 <?php
-namespace MFC\RestructureRedirect\Hooks;
+namespace Mfc\RestructureRedirect\Hooks;
 
-use MFC\RestructureRedirect\Utility\LinkCreator;
+use Mfc\RestructureRedirect\Utility\LinkCreator;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -57,15 +57,25 @@ class HooksHandlerHook
             unset($params['id']);
             $params['L'] = $domainData['sys_language_uid'];
 
+            $this->logRestructureUrlRequest($row['uid'], $row['hits_count']);
+
             /** @var LinkCreator $linkCreator */
-            $linkCreator = GeneralUtility::makeInstance(LinkCreator::class, $redirectId);
+            $linkCreator = GeneralUtility::makeInstance('Mfc\\RestructureRedirect\\Utility\\LinkCreator', $redirectId);
             $redirectUrl = ltrim($linkCreator->getLink($redirectId, $params), '/');
             if (!isset($linkCreator->settings['useLangParam']) || !$linkCreator->settings['useLangParam']) {
                 $redirectUrl = ltrim($linkCreator->excludeLanguageParamFromUrl($redirectUrl), '/');
             }
             if ($redirectUrl == $hookParams['URL']) {
-                $this->sendErrorMail($redirectUrl, $row);
-
+                $this->sendErrorMail($redirectUrl, $row, $linkCreator->settings['recipientMailAddress']);
+                //deactivate redirect
+                $this->getDatabaseConnection()->exec_UPDATEquery(
+                    $table,
+                    'uid = ' . $row['uid'],
+                    array (
+                        'hidden' => 1,
+                        'tstamp' => time()
+                    )
+                );
                 return;
             }
 
@@ -73,10 +83,12 @@ class HooksHandlerHook
                 && $linkCreator->settings['useRequestDomain']
             ) {
                 $domain = $domainData['redirectTo'] ?: $requestDomain;
-                if (strpos($domain, 'https://')) {
-                    $domain = 'https://' . ltrim(rtrim($domain, '/') . '/', 'https://');
+                if (strpos($domain, 'https://') != false) {
+                    $domain = 'https://' . ltrim(ltrim(rtrim($domain, '/') . '/', 'https'), '://');
+                } elseif (strpos($domain, 'http://') != false) {
+                    $domain = 'http://' . ltrim(ltrim(rtrim($domain, '/') . '/', 'http'), '://');
                 } else {
-                    $domain = 'http://' . ltrim(rtrim($domain, '/') . '/', 'http://');
+                    $domain = 'http://' . ltrim(rtrim($domain, '/') . '/', '://');
                 }
             } elseif (isset($GLOBALS['TSFE']->config['config']['baseURL'])
                 && $GLOBALS['TSFE']->config['config']['baseURL'] != ''
@@ -87,10 +99,17 @@ class HooksHandlerHook
             }
 
             if (isset($linkCreator->settings['forceSSLDomain']) && $linkCreator->settings['forceSSLDomain']) {
-                $domain = 'https://' . ltrim(ltrim($domain, 'http://'), 'https://');
+                $domain = 'https://' . ltrim(ltrim($domain, 'https'), '://');
             }
 
-            $redirectUrl = $domain . $redirectUrl;
+            $additionalPathSegment = '';
+            if (isset($linkCreator->settings['additionalPathSegment']) &&
+                !empty($linkCreator->settings['additionalPathSegment'])
+            ) {
+                $additionalPathSegment = $linkCreator->settings['additionalPathSegment'];
+            }
+
+            $redirectUrl = $domain . $additionalPathSegment. $redirectUrl;
             \TYPO3\CMS\Core\Utility\HttpUtility::redirect(
                 GeneralUtility::locationHeaderUrl($redirectUrl),
                 \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_301
@@ -130,18 +149,25 @@ class HooksHandlerHook
      *
      * @param string $foundUrl
      * @param array $row
+     * @param string $mailAdress
      *
      * @return void
      */
-    private function sendErrorMail($foundUrl, $row)
+    private function sendErrorMail($foundUrl, $row, $mailAdress = '')
     {
-        $subject = 'problems on host ' . $GLOBALS['_ENV']['HTTP_HOST'] . ' with url ' . $foundUrl;
+        $subject = 'The TYPO3 extension restructure_redirect detects a problem on host ' .
+            $GLOBALS['_ENV']['HTTP_HOST'] . ' with url ' . $foundUrl;
+        $recipient = 'kontroll.heimwerker@marketing-factory.de';
+        if (!empty($mailAdress)) {
+            $recipient = $mailAdress;
+        }
 
         mail(
-            'kontroll.heimwerker@marketing-factory.de',
+            $recipient,
             $subject,
             'Please test the url ' . $GLOBALS['TSFE']->config['config']['baseURL'] . $foundUrl . ' on page with id '
-            . $row['pid'] . ' for host ' . $GLOBALS['_ENV']['HTTP_HOST']
+            . $row['pid'] . ' for host ' . $GLOBALS['_ENV']['HTTP_HOST'] .
+            '. The redirect was deactivated to prevend redirect circles.'
         );
     }
 
@@ -166,5 +192,39 @@ class HooksHandlerHook
     protected function getDatabaseConnection()
     {
         return $GLOBALS['TYPO3_DB'];
+    }
+
+    protected function logRestructureUrlRequest($redirectEntryUid, $hits)
+    {
+        $referer = $_SERVER['HTTP_REFERER'];
+        $time = time();
+
+        $values = array(
+            'last_called' => $time,
+            'hits_count' => $hits + 1,
+            'last_referer' => 'direct request'
+        );
+
+        if (!empty($referer)) {
+            $values['last_referer'] = $referer;
+        }
+
+        $update = $this->getDatabaseConnection()->exec_UPDATEquery(
+            'tx_restructureredirect_redirects',
+            'uid = ' . $redirectEntryUid,
+            $values
+        );
+
+        if ($update) {
+            $this->getDatabaseConnection()->exec_INSERTquery(
+                'tx_restructureredirect_redirects_log',
+                array(
+                    'redirectUid' => $redirectEntryUid,
+                    'tstamp' => $time,
+                    'crdate' => $time,
+                    'referer' => $values['last_referer']
+                )
+            );
+        }
     }
 }

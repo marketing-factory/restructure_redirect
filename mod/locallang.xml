@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>database</type>
+		<description>Language labels for database tables/fields belonging to extension 'restructure_redirect'</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="mlang_labels_tablabel">Redirects</label>
+			<label index="tools_redirect">Redirects</label>
+			<label index="listRedirects">List Redirects (active or at most 1 year expired)</label>
+								</languageKey>
+				<languageKey index="de" type="array">
+					<label index="mlang_tabs_tab">Umleitungen (aktiv oder höchstens 1 Jahr expired)</label>
+			</languageKey>
+	</data>
+</T3locallang>

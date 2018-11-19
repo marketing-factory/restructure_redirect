@@ -9,6 +9,9 @@
 			<label index="tx_restructureredirect_redirects">Redirects</label>
 			<label index="tx_restructureredirect_redirects.url">Url</label>
 			<label index="tx_restructureredirect_redirects.expire">expire</label>
+			<label index="tx_restructureredirect_redirects.hits_count">hits count</label>
+			<label index="tx_restructureredirect_redirects.last_referer">last referrer</label>
+			<label index="tx_restructureredirect_redirects.last_called">last called</label>
 			<label index="sureToDelete">Do you want to delete?</label>
 
 		</languageKey>
@@ -16,6 +19,10 @@
 			<label index="tx_restructureredirect_redirects">Umleitungen</label>
 			<label index="tx_restructureredirect_redirects.url">Url</label>
 			<label index="tx_restructureredirect_redirects.expire">expire</label>
+			<label index="tx_restructureredirect_redirects.hits_count">Anzahl der Aufrufe</label>
+			<label index="tx_restructureredirect_redirects.last_referer">letzte Verweisurl</label>
+			<label index="tx_restructureredirect_redirects.last_called">letzter Aufruf</label>
+			<label index="sureToDelete">Wollen Sie den Eintrag wirklich löschen?</label>
 		</languageKey>
 	</data>
 </T3locallang>
