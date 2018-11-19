@@ -1,5 +1,6 @@
 {
   "name": "mfc/restructure-redirect",
+  "type": "typo3-cms-extension",
   "description": "Restructure Redirect",
   "license": "proprietary",
   "authors": [
