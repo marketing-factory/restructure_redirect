@@ -2,6 +2,7 @@
 namespace Mfc\RestructureRedirect\Utility;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -206,7 +207,7 @@ class LinkCreator
         $parts = parse_url($link);
         parse_str($parts['query'], $queryParts);
         $parts['query'] = $queryParts;
-        $parts['query'] = GeneralUtility::arrayDiffAssocRecursive($parts['query'], $excludeParams);
+        $parts['query'] = ArrayUtility::arrayDiffAssocRecursive($parts['query'], $excludeParams);
 
         $link = $parts['path'];
 
