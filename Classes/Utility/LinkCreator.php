@@ -168,9 +168,14 @@ class LinkCreator
     {
         $table = 'tx_restructureredirect_redirects';
         $enableFields = BackendUtility::BEenableFields($table);
+        $deletedClause = BackendUtility::deleteClause($table);
         $where = 'sys_language_uid = ' . $sysLanguageUid . ' AND url = ' .
             $this->getDatabaseConnection()->fullQuoteStr($link, $table);
-        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
+        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
+            '*',
+            $table,
+            $where . $enableFields. $deletedClause
+        );
         if ($row) {
             return true;
         }

@@ -56,12 +56,17 @@ class UpdateRecordHook
     public function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, $pObj)
     {
         if ($status == 'update' && isset($fieldArray['title'])) {
-            if ($table == 'pages') {
+            if ($table == 'pages' || $table == 'pages_language_overlay') {
+                if ($table == 'pages_language_overlay') {
+                    $pid = $this->getParentPageEntry($id);
+                } else {
+                    $pid = $id;
+                }
                 /** @var LinkCreator $linkCreator */
-                $linkCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('Mfc\\RestructureRedirect\\Utility\\LinkCreator', $id);
+                $linkCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('Mfc\\RestructureRedirect\\Utility\\LinkCreator', $pid);
                 if ($linkCreator->removeRedirect()) {
-                    $parent = $this->getPidFromPageID($id);
-                    $this->removeRedirectsForTarget($id, $parent, $linkCreator);
+                    $parent = $this->getPidFromPageID($pid);
+                    $this->removeRedirectsForTarget($pid, $parent, $linkCreator);
                 }
             }
         }
