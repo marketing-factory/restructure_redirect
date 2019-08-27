@@ -151,6 +151,7 @@ class MoveRecordHook
     {
         $subPages = $this->getSubpages($id);
         $subPages[$id] = array('pid' => $source, 'uid' => $id);
+        $parentRecordId = 0;
         foreach ($subPages as $subPage) {
             $paramArr = $this->getLangParams($subPage['uid']);
             foreach ($paramArr as $id => $sysLanguageUid) {
@@ -162,8 +163,11 @@ class MoveRecordHook
                     $link = $linkCreator->excludeLanguageParamFromUrl($link);
                 }
                 if ($link != '') {
-                    $linkCreator->createRedirectEntry($subPage['uid'], $link, $sysLanguageUid);
+                    $parentRecordId = $linkCreator->createRedirectEntry($subPage['uid'], $link, $sysLanguageUid);
                     $linkCreator->clearPageCache($subPage['uid']);
+                }
+                if ($parentRecordId > 0) {
+                    $linkCreator->setParent($parentRecordId);
                 }
             }
         }

@@ -94,10 +94,11 @@ class LinkCreator
      * @param string $link
      * @param int $sysLanguageUid
      *
-     * @return void
+     * @return integer
      */
     public function createRedirectEntry($pid, $link, $sysLanguageUid)
     {
+        $createdParentRecordId = 0;
         if ($this->pageIsActive($pid, $sysLanguageUid)) {
             $table = "tx_restructureredirect_redirects";
             $this->getParentPageId($pid, $link, $sysLanguageUid);
@@ -120,8 +121,12 @@ class LinkCreator
                     ),
                 );
                 $this->getDatabaseConnection()->exec_INSERTquery($table, $field_values);
+                if ($sysLanguageUid == 0) {
+                    $createdParentRecordId = $this->getDatabaseConnection()->sql_insert_id();
+                }
             }
         }
+        return $createdParentRecordId;
     }
 
     /**

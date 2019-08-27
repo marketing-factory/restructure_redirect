@@ -32,7 +32,7 @@ return array(
     'columns' => array(
         'hidden' => array(
             'exclude' => 1,
-            'label'   => 'LLL:EXT:lang/locallang_general.xml:LGL.hidden',
+            'label'   => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xml:LGL.hidden',
             'config'  => array(
                 'type'    => 'check',
                 'default' => '0'
@@ -43,7 +43,7 @@ return array(
         'l10n_parent' => array(
             'displayCond' => 'FIELD:sys_language_uid:>:0',
             'exclude' => 1,
-            'label' => 'LLL:EXT:lang/locallang_general.xml:LGL.l18n_parent',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xml:LGL.l18n_parent',
             'config' => array(
                 'type' => 'select',
                 'items' => array(
@@ -56,7 +56,7 @@ return array(
         ),
         'starttime' => array(
             'exclude' => 1,
-            'label'   => 'LLL:EXT:lang/locallang_general.xml:LGL.starttime',
+            'label'   => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xml:LGL.starttime',
             'config'  => array(
                 'type'     => 'input',
                 'size'     => '8',
@@ -68,7 +68,7 @@ return array(
         ),
         'endtime' => array(
             'exclude' => 1,
-            'label'   => 'LLL:EXT:lang/locallang_general.xml:LGL.endtime',
+            'label'   => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.endtime',
             'config'  => array(
                 'type'     => 'input',
                 'size'     => '8',
@@ -84,7 +84,7 @@ return array(
         ),
         'fe_group' => array(
             'exclude' => 1,
-            'label'   => 'LLL:EXT:lang/locallang_general.xml:LGL.fe_group',
+            'label'   => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xml:LGL.fe_group',
             'config'  => array(
                 'type'  => 'select',
                 'items' => array(
