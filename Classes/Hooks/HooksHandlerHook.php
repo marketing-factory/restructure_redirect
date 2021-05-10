@@ -54,9 +54,9 @@ class HooksHandlerHook
         $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
         if ($row['url'] && strlen($row['url']) > 0) {
             $redirectId = $row['pid'];
-            $params = $this->getUrlParams($hookParams['URL']);
-            unset($params['id']);
-            $params['L'] = $domainData['sys_language_uid'];
+            $params = [
+                'L' => $domainData['sys_language_uid'],
+            ];
 
             $this->logRestructureUrlRequest($row['uid'], $row['hits_count']);
 
@@ -116,32 +116,6 @@ class HooksHandlerHook
                 \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_301
             );
         }
-    }
-
-    /**
-     * getUrlParams
-     * getparams from realurl
-     *
-     * @param string $url
-     *
-     * @return array
-     */
-    private function getUrlParams($url)
-    {
-        $where = 'content = "' . $url . '"';
-
-        $res = $this->getDatabaseConnection()->exec_SELECTQuery('*', 'tx_realurl_urlencodecache', $where, '', '', 1);
-        if ($res) {
-            $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-            $origParams = GeneralUtility::trimExplode('|', $row['origparams']);
-            if ($origParams[1]) {
-                $params = GeneralUtility::explodeUrl2Array($origParams[1]);
-
-                return $params;
-            }
-        }
-
-        return array();
     }
 
     /**
