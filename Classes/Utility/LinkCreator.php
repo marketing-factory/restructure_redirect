@@ -2,6 +2,7 @@
 namespace Mfc\RestructureRedirect\Utility;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -93,10 +94,11 @@ class LinkCreator
      * @param string $link
      * @param int $sysLanguageUid
      *
-     * @return void
+     * @return integer
      */
     public function createRedirectEntry($pid, $link, $sysLanguageUid)
     {
+        $createdParentRecordId = 0;
         if ($this->pageIsActive($pid, $sysLanguageUid)) {
             $table = "tx_restructureredirect_redirects";
             $this->getParentPageId($pid, $link, $sysLanguageUid);
@@ -119,8 +121,12 @@ class LinkCreator
                     ),
                 );
                 $this->getDatabaseConnection()->exec_INSERTquery($table, $field_values);
+                if ($sysLanguageUid == 0) {
+                    $createdParentRecordId = $this->getDatabaseConnection()->sql_insert_id();
+                }
             }
         }
+        return $createdParentRecordId;
     }
 
     /**
@@ -162,9 +168,14 @@ class LinkCreator
     {
         $table = 'tx_restructureredirect_redirects';
         $enableFields = BackendUtility::BEenableFields($table);
+        $deletedClause = BackendUtility::deleteClause($table);
         $where = 'sys_language_uid = ' . $sysLanguageUid . ' AND url = ' .
             $this->getDatabaseConnection()->fullQuoteStr($link, $table);
-        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
+        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
+            '*',
+            $table,
+            $where . $enableFields. $deletedClause
+        );
         if ($row) {
             return true;
         }
@@ -206,7 +217,7 @@ class LinkCreator
         $parts = parse_url($link);
         parse_str($parts['query'], $queryParts);
         $parts['query'] = $queryParts;
-        $parts['query'] = GeneralUtility::arrayDiffAssocRecursive($parts['query'], $excludeParams);
+        $parts['query'] = ArrayUtility::arrayDiffAssocRecursive($parts['query'], $excludeParams);
 
         $link = $parts['path'];
 

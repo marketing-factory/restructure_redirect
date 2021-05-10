@@ -24,7 +24,8 @@ class HooksHandlerHook
             return;
         }
 
-        $requestDomain = $GLOBALS['_ENV']['HTTP_HOST'] ?: $_SERVER['HTTP_HOST'];
+        $requestHost = GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
+        $requestDomain = GeneralUtility::getIndpEnv('HTTP_HOST');
         $domainData = $this->getRootPageAndLanguageForRequestDomain($requestDomain);
         if (!$domainData) {
             return;
@@ -46,16 +47,16 @@ class HooksHandlerHook
 
         $url = pathinfo($hookParams['URL'], PATHINFO_DIRNAME) . '/' . pathinfo($hookParams['URL'], PATHINFO_FILENAME);
         $url = $this->getDatabaseConnection()->quoteStr($url, $table);
-        $where = '(url LIKE "' . $url . '.%" OR url LIKE "/' . $url . '.%" OR url = "' . $url . '/%" OR url = "/' .
-            $url . '/%") AND (expire = 0 OR  expire > ' . time() . ')
+        $where = '(url LIKE "' . $url . '.%" OR url LIKE "/' . $url . '.%" OR url = "' . $url . '/" OR url = "/' .
+            $url . '/") AND (expire = 0 OR  expire > ' . time() . ')
             AND sys_language_uid = ' . $domainData['sys_language_uid'] . ' AND rootpage = ' . $domainData['pid'];
 
         $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $table, $where . $enableFields);
         if ($row['url'] && strlen($row['url']) > 0) {
             $redirectId = $row['pid'];
-            $params = $this->getUrlParams($hookParams['URL']);
-            unset($params['id']);
-            $params['L'] = $domainData['sys_language_uid'];
+            $params = [
+                'L' => $domainData['sys_language_uid'],
+            ];
 
             $this->logRestructureUrlRequest($row['uid'], $row['hits_count']);
 
@@ -82,10 +83,10 @@ class HooksHandlerHook
             if ($requestDomain && isset($linkCreator->settings['useRequestDomain'])
                 && $linkCreator->settings['useRequestDomain']
             ) {
-                $domain = $domainData['redirectTo'] ?: $requestDomain;
-                if (strpos($domain, 'https://') != false) {
+                $domain = $domainData['redirectTo'] ?: $requestHost;
+                if (strpos($domain, 'https://') !== false) {
                     $domain = 'https://' . ltrim(ltrim(rtrim($domain, '/') . '/', 'https'), '://');
-                } elseif (strpos($domain, 'http://') != false) {
+                } elseif (strpos($domain, 'http://') !== false) {
                     $domain = 'http://' . ltrim(ltrim(rtrim($domain, '/') . '/', 'http'), '://');
                 } else {
                     $domain = 'http://' . ltrim(rtrim($domain, '/') . '/', '://');
@@ -115,32 +116,6 @@ class HooksHandlerHook
                 \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_301
             );
         }
-    }
-
-    /**
-     * getUrlParams
-     * getparams from realurl
-     *
-     * @param string $url
-     *
-     * @return array
-     */
-    private function getUrlParams($url)
-    {
-        $where = 'content = "' . $url . '"';
-
-        $res = $this->getDatabaseConnection()->exec_SELECTQuery('*', 'tx_realurl_urlencodecache', $where, '', '', 1);
-        if ($res) {
-            $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-            $origParams = GeneralUtility::trimExplode('|', $row['origparams']);
-            if ($origParams[1]) {
-                $params = GeneralUtility::explodeUrl2Array($origParams[1]);
-
-                return $params;
-            }
-        }
-
-        return array();
     }
 
     /**
